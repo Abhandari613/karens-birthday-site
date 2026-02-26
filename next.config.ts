@@ -7,15 +7,9 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "zepqbywcloxqikdlmxdx.supabase.co",
       },
-      // Keep placeholder if needed
       {
         protocol: "https",
         hostname: "placeholder.supabase.co",
-      },
-      // Spotify album covers (future)
-      {
-        protocol: "https",
-        hostname: "i.scdn.co",
       }
     ],
   },

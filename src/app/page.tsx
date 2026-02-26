@@ -16,7 +16,7 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 z-0 w-64 h-64 opacity-90 pointer-events-none transform -translate-x-16 translate-y-16 rotate-12">
           <Image
             alt="Plantain Leaf Left"
-            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl"
+            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl blur-sm"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBx4KXTy36Dfa8pcgpB0wrTR2OZoIQjIEpnnlDsDtJaQNE3wsfqnu8HJ4TMOLLDas3XlT8xeVn4zXbRvS3Y7oLKVdGmmXxqLHaa7ZN-YjuOZjQXgQ9dn820bfHsnrrARdu9brFLedQHTGYVmA7Imfi7PSZRKlHHdKGFtmWWVZtl2wT52X_EOBfi9kOi7tRIADhEh6NskxhCp1NeDlCzrLe2KnwSrXlay8nAbyh3-xqLSewom4oaaB4fxFqTQa0GmufrM9LiSN9rQtT"
             fill
             unoptimized
@@ -25,16 +25,16 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 z-0 w-64 h-64 opacity-90 pointer-events-none transform translate-x-16 translate-y-16 -rotate-90 scale-x-[-1]">
           <Image
             alt="Plantain Leaf Right"
-            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl"
+            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl blur-sm"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBx4KXTy36Dfa8pcgpB0wrTR2OZoIQjIEpnnlDsDtJaQNE3wsfqnu8HJ4TMOLLDas3XlT8xeVn4zXbRvS3Y7oLKVdGmmXxqLHaa7ZN-YjuOZjQXgQ9dn820bfHsnrrARdu9brFLedQHTGYVmA7Imfi7PSZRKlHHdKGFtmWWVZtl2wT52X_EOBfi9kOi7tRIADhEh6NskxhCp1NeDlCzrLe2KnwSrXlay8nAbyh3-xqLSewom4oaaB4fxFqTQa0GmufrM9LiSN9rQtT"
             fill
             unoptimized
           />
         </div>
-        <div className="absolute top-0 right-0 z-0 w-64 h-64 opacity-60 pointer-events-none transform translate-x-20 -translate-y-20">
+        <div className="absolute top-0 right-0 z-0 w-64 h-64 opacity-30 pointer-events-none transform translate-x-20 -translate-y-20">
           <Image
             alt="Foliage Top Right"
-            className="w-full h-full object-cover rounded-full mix-blend-overlay"
+            className="w-full h-full object-cover rounded-full mix-blend-overlay blur-lg"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwbuzBw_xbwa7K3dDH7yPtmoXVld2Y3j4rct6GbgIU2ZKJXxKSY5UceNypne5TY73tpgYWF46o9gFHdp1wpDD98W7sNcoemI-xzCmnAgdyHqDP1X4RFi5lPS8tTAReyuuxuAZNyurZIeOmTpx1d9uyzmD1u7o_VZIag1YhRrp3IalF_MGOio2x9Wss0fMNmE973mhC54tG0TjZHvBkVLJDh1MZh6nsOeuYaUrysWDiS8tKZEK_wdmRI9yUDf50hlZljdCKkI2ZIMb_"
             fill
             unoptimized
@@ -43,7 +43,7 @@ export default function Home() {
         <div className="absolute top-0 left-0 z-0 w-80 h-80 opacity-40 pointer-events-none transform -translate-x-24 -translate-y-16 rotate-[120deg] scale-x-[-1]">
           <Image
             alt="Plantain Leaf Top Left"
-            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl"
+            className="w-full h-full object-contain mix-blend-overlay drop-shadow-xl blur-sm"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBx4KXTy36Dfa8pcgpB0wrTR2OZoIQjIEpnnlDsDtJaQNE3wsfqnu8HJ4TMOLLDas3XlT8xeVn4zXbRvS3Y7oLKVdGmmXxqLHaa7ZN-YjuOZjQXgQ9dn820bfHsnrrARdu9brFLedQHTGYVmA7Imfi7PSZRKlHHdKGFtmWWVZtl2wT52X_EOBfi9kOi7tRIADhEh6NskxhCp1NeDlCzrLe2KnwSrXlay8nAbyh3-xqLSewom4oaaB4fxFqTQa0GmufrM9LiSN9rQtT"
             fill
             unoptimized
@@ -106,16 +106,10 @@ export default function Home() {
                 <span className="text-lg tracking-wide text-shadow-soft uppercase">Share a Memory</span>
               </div>
             </Link>
-            <div className="flex gap-4 w-full">
-              <a href="#wall" className="flex-1 bg-white/5 hover:bg-white/10 text-[var(--color-sand-light)] font-medium py-3 px-4 rounded-xl backdrop-blur-md border border-[var(--color-golden-hour)]/30 transition-colors text-sm flex items-center justify-center gap-2 shadow-lg group">
-                <span className="material-symbols-outlined text-sm group-hover:translate-y-1 transition-transform">arrow_downward</span>
-                View Wall
-              </a>
-              <Link href="/music" className="flex-1 bg-white/5 hover:bg-white/10 text-[var(--color-golden-hour)] font-medium py-3 px-4 rounded-xl backdrop-blur-md border border-[var(--color-golden-hour)]/30 transition-colors text-sm flex items-center justify-center gap-2 shadow-lg group">
-                <span className="material-symbols-outlined text-sm group-hover:animate-pulse">music_note</span>
-                Spotify
-              </Link>
-            </div>
+            <a href="#wall" className="w-full bg-white/5 hover:bg-white/10 text-[var(--color-sand-light)] font-medium py-3 px-4 rounded-xl backdrop-blur-md border border-[var(--color-golden-hour)]/30 transition-colors text-sm flex items-center justify-center gap-2 shadow-lg group">
+              <span className="material-symbols-outlined text-sm group-hover:translate-y-1 transition-transform">arrow_downward</span>
+              View Wall
+            </a>
           </div>
         </main>
       </section>

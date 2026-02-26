@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PwaRegister from "@/components/PwaRegister";
-import BackgroundMusic from "@/components/BackgroundMusic";
+
 import BackgroundSlideshow from "@/components/BackgroundSlideshow";
 import AmbientBackground from "@/components/AmbientBackground";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "A love letter to Karen — celebrating 40 years of memories. 🇸🇻",
   openGraph: {
     title: "Karen's 40th Birthday | Debí Tirar Más Fotos",
-    description: "Celebrate Karen's 40th with us! Share your favorite photos, memories, and songs.",
+    description: "Celebrate Karen's 40th with us! Share your favorite photos and memories.",
     type: "website",
   },
 };
@@ -35,8 +35,6 @@ export default function RootLayout({
           {children}
         </div>
         <PwaRegister />
-        {/* Background music — DTMF by Bad Bunny via Spotify embed */}
-        <BackgroundMusic />
       </body>
     </html>
   );

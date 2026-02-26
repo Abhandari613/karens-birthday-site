@@ -56,3 +56,6 @@ Karen photos/
 .claude/
 .gemini/
 .vercel
+
+# supabase temp files
+supabase/.temp/
