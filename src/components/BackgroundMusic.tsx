@@ -2,130 +2,154 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const TRACK_URI = 'spotify:track:3sK8wGT43QFpWrvNQsrQya';
-
-declare global {
-    interface Window {
-        onSpotifyIframeApiReady?: (IFrameAPI: SpotifyIFrameAPI) => void;
-    }
-}
-
-interface SpotifyIFrameAPI {
-    createController(
-        el: HTMLElement,
-        options: { uri: string; width: number; height: number },
-        callback: (controller: SpotifyEmbedController) => void
-    ): void;
-}
-
-interface SpotifyEmbedController {
-    play: () => void;
-    togglePlay: () => void;
-}
+const SPOTIFY_TRACK_ID = '3sK8wGT43QFpWrvNQsrQya';
 
 export default function BackgroundMusic() {
     const [dismissed, setDismissed] = useState(false);
-    const [activated, setActivated] = useState(false);
-    const controllerRef = useRef<SpotifyEmbedController | null>(null);
-    const embedRef = useRef<HTMLDivElement>(null);
+    const [playing, setPlaying] = useState(false);
+    const [fallback, setFallback] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const activatedRef = useRef(false);
+    const previewUrlRef = useRef<string | null>(null);
 
-    // Load Spotify IFrame API and create embed controller on mount
+    // Fetch preview URL on mount
     useEffect(() => {
-        window.onSpotifyIframeApiReady = (IFrameAPI) => {
-            if (!embedRef.current) return;
-            IFrameAPI.createController(
-                embedRef.current,
-                { uri: TRACK_URI, width: 1, height: 1 },
-                (controller) => {
-                    controllerRef.current = controller;
-                }
-            );
-        };
+        fetch('/api/spotify/preview')
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.preview_url) {
+                    previewUrlRef.current = data.preview_url;
 
-        const script = document.createElement('script');
-        script.src = 'https://open.spotify.com/embed/iframe-api/v1';
-        script.async = true;
-        document.body.appendChild(script);
+                    const audio = new Audio(data.preview_url);
+                    audio.loop = true;
+                    audio.preload = 'auto';
+                    audio.volume = 0.5;
+                    audioRef.current = audio;
+
+                    const onPlay = () => setPlaying(true);
+                    const onPause = () => setPlaying(false);
+                    // Fallback loop in case the loop attribute fails
+                    const onEnded = () => {
+                        audio.currentTime = 0;
+                        audio.play().catch(() => {});
+                    };
+
+                    audio.addEventListener('play', onPlay);
+                    audio.addEventListener('pause', onPause);
+                    audio.addEventListener('ended', onEnded);
+
+                    // If user already clicked before audio was ready, play now
+                    if (activatedRef.current) {
+                        audio.play().catch(() => {});
+                    }
+                } else {
+                    setFallback(true);
+                }
+            })
+            .catch(() => {
+                setFallback(true);
+            });
 
         return () => {
-            script.remove();
-            delete window.onSpotifyIframeApiReady;
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.src = '';
+                audioRef.current = null;
+            }
         };
     }, []);
 
-    // On first user gesture, call play() directly
-    const handlePlay = useCallback(() => {
-        if (activated) return;
-        setActivated(true);
-
-        const tryPlay = () => {
-            try { controllerRef.current?.play(); } catch { /* ignore */ }
+    // Resume playback when tab becomes visible again
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (
+                document.visibilityState === 'visible' &&
+                activatedRef.current &&
+                audioRef.current &&
+                audioRef.current.paused
+            ) {
+                audioRef.current.play().catch(() => {});
+            }
         };
 
-        if (controllerRef.current) {
-            tryPlay();
-        } else {
-            // API not ready yet — poll until controller exists
-            const id = setInterval(() => {
-                if (controllerRef.current) {
-                    tryPlay();
-                    clearInterval(id);
-                }
-            }, 200);
-            setTimeout(() => clearInterval(id), 10000);
-        }
-    }, [activated]);
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, []);
 
+    // On any user gesture, start playback (no { once: true } — we manage state with the ref)
     useEffect(() => {
-        const handler = () => handlePlay();
-        window.addEventListener('click', handler, { once: true });
-        window.addEventListener('keydown', handler, { once: true });
-        window.addEventListener('touchstart', handler, { once: true });
+        if (fallback) return;
+
+        const handler = () => {
+            if (activatedRef.current) return;
+            activatedRef.current = true;
+
+            if (audioRef.current) {
+                audioRef.current.play().catch(() => {});
+            }
+            // If audio isn't ready yet, the fetch callback above will start it
+        };
+
+        window.addEventListener('click', handler);
+        window.addEventListener('keydown', handler);
+        window.addEventListener('touchstart', handler);
         return () => {
             window.removeEventListener('click', handler);
             window.removeEventListener('keydown', handler);
             window.removeEventListener('touchstart', handler);
         };
-    }, [handlePlay]);
+    }, [fallback]);
 
-    // Dismiss: hide pill, stop audio by removing the iframe from DOM
+    // Dismiss: pause audio, hide pill
     const handleDismiss = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
-        // Remove the Spotify iframe by clearing the container
-        if (embedRef.current) {
-            embedRef.current.innerHTML = '';
+        activatedRef.current = false;
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            audioRef.current = null;
         }
-        controllerRef.current = null;
         setDismissed(true);
     }, []);
 
     if (dismissed) return null;
 
+    // Fallback: visible mini Spotify embed the user can tap to play
+    if (fallback) {
+        return (
+            <div className="fixed bottom-6 left-6 z-50 animate-fade-in-up" style={{ animationDelay: '2.5s', animationFillMode: 'both' }}>
+                <div className="relative">
+                    <iframe
+                        src={`https://open.spotify.com/embed/track/${SPOTIFY_TRACK_ID}?utm_source=generator&theme=0`}
+                        width="300"
+                        height="80"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                        className="rounded-xl shadow-2xl"
+                        title="DTMF by Bad Bunny"
+                    />
+                    <button
+                        onClick={handleDismiss}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-black/70 text-white/60 hover:text-white rounded-full flex items-center justify-center text-xs backdrop-blur-sm border border-white/10"
+                        aria-label="Dismiss music player"
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
-            {/* Hidden container for Spotify IFrame API embed */}
-            <div
-                ref={embedRef}
-                style={{
-                    position: 'fixed',
-                    bottom: '-10px',
-                    left: '-10px',
-                    width: 1,
-                    height: 1,
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    zIndex: -1,
-                }}
-            />
-
             {/* ── Floating now-playing pill ─────────────────────────────── */}
             <div
                 className="fixed bottom-6 left-6 z-50 animate-fade-in-up"
                 style={{ animationDelay: '2.5s', animationFillMode: 'both' }}
             >
-                <div className={`flex items-center gap-3 px-2 py-2 pr-4 bg-black/40 backdrop-blur-xl rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] relative overflow-hidden transition-all duration-500 border ${activated ? 'border-[var(--color-golden-hour)]/50' : 'border-white/10'}`}>
+                <div className={`flex items-center gap-3 px-2 py-2 pr-4 bg-black/40 backdrop-blur-xl rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] relative overflow-hidden transition-all duration-500 border ${playing ? 'border-[var(--color-golden-hour)]/50' : 'border-white/10'}`}>
 
-                    {activated && (
+                    {playing && (
                         <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-golden-hour)]/10 to-transparent animate-pulse pointer-events-none" />
                     )}
 
@@ -138,16 +162,16 @@ export default function BackgroundMusic() {
 
                     {/* Track info */}
                     <div className="flex flex-col items-start z-10">
-                        <span className={`text-[11px] font-bold uppercase tracking-[0.15em] leading-tight transition-colors duration-500 ${activated ? 'text-[var(--color-golden-hour)]' : 'text-white/60'}`}>
+                        <span className={`text-[11px] font-bold uppercase tracking-[0.15em] leading-tight transition-colors duration-500 ${playing ? 'text-[var(--color-golden-hour)]' : 'text-white/60'}`}>
                             DtMF
                         </span>
                         <span className="text-[9px] text-white/50 tracking-wider font-light">
-                            {activated ? 'Bad Bunny · Playing' : 'Bad Bunny · Tap anywhere'}
+                            {playing ? 'Bad Bunny · Playing' : 'Bad Bunny · Tap anywhere'}
                         </span>
                     </div>
 
                     {/* Animated bars when playing */}
-                    {activated && (
+                    {playing && (
                         <div className="flex items-end gap-[2px] h-3 ml-1 opacity-70 z-10">
                             <div className="w-0.5 bg-[var(--color-golden-hour)] animate-[musicBar_1s_ease-in-out_infinite]" />
                             <div className="w-0.5 bg-[var(--color-golden-hour)] animate-[musicBar_1.2s_ease-in-out_infinite_0.2s]" />

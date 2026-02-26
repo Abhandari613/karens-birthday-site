@@ -25,9 +25,8 @@ export default function PhotoTimeline() {
             if (error) {
                 setError("Failed to load timeline.");
             } else if (data) {
-                // Sort and group logic
-                // We only want items with media for the timeline
-                const mediaItems = data.filter(s => s.media_url !== null);
+                // Include all submissions (photos, videos, and text-only memories)
+                const mediaItems = [...data];
 
                 // Sort chronologically ascending (oldest first)
                 mediaItems.sort((a, b) => {
@@ -83,7 +82,7 @@ export default function PhotoTimeline() {
     if (groupedSubmissions.length === 0) {
         return (
             <div className="text-center p-12 text-white/50">
-                No photos found for the timeline yet.
+                No memories found for the timeline yet.
             </div>
         );
     }

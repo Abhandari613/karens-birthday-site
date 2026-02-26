@@ -91,6 +91,14 @@ export default function MemoryCard({ submission }: MemoryCardProps) {
             {/* Content Layer */}
             <div className={`p-4 sm:p-5 relative z-10 ${hasMedia ? 'bg-gradient-to-t from-black/80 via-black/50 to-transparent absolute bottom-0 w-full' : 'bg-[#1a2b54]/40 w-full h-full min-h-[150px] flex flex-col justify-center'}`}>
 
+                {/* Year badge for text-only memories */}
+                {!hasMedia && submission.photo_year && (
+                    <div className="inline-flex items-center gap-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded font-bold text-[var(--color-golden-hour)] text-xs shadow-md border border-white/10 mb-3 self-start">
+                        <span className="material-symbols-outlined text-[10px]">calendar_month</span>
+                        {submission.photo_year}
+                    </div>
+                )}
+
                 {submission.message && (
                     <p className={`text-white/90 text-sm sm:text-base leading-relaxed mb-3 ${hasMedia ? 'line-clamp-3 group-hover:line-clamp-none transition-all' : 'font-hand text-xl sm:text-2xl text-[var(--color-sand-light)]'}`}>
                         &quot;{submission.message}&quot;

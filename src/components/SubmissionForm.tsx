@@ -158,7 +158,7 @@ export default function SubmissionForm() {
             </div>
 
             <div className="space-y-1">
-                <label className="text-sm font-semibold text-[var(--color-sand-light)] tracking-wide ml-1">Photo Year (Optional)</label>
+                <label className="text-sm font-semibold text-[var(--color-sand-light)] tracking-wide ml-1">Memory Year (Optional)</label>
                 <input
                     type="number"
                     min="1950"

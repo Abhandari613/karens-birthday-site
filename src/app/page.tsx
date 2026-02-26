@@ -133,7 +133,7 @@ export default function Home() {
               Karen's 40 Years of Memories
             </p>
             <p className="text-white/60 text-sm mt-4 font-sans tracking-wide">
-              Live from the submissions!
+              A timeline of love, laughter &amp; memories
             </p>
           </div>
 

@@ -149,7 +149,7 @@ export default function Lightbox({ submission, onClose }: LightboxProps) {
                         </div>
 
                         {/* Optional Photo Year / EXIF meta info can go here */}
-                        {(submission.photo_year || submission.exif_date) && hasMedia && (
+                        {(submission.photo_year || submission.exif_date) && (
                             <div className="mt-6 flex flex-wrap gap-2">
                                 {submission.photo_year && (
                                     <span className="bg-white/5 border border-white/10 text-white/70 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">

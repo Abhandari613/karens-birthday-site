@@ -7,12 +7,22 @@ import type { Submission } from "@/lib/types";
 import MemoryCard from "./MemoryCard";
 import Lightbox from "./Lightbox";
 
+function getYear(s: Submission): string {
+    if (s.photo_year) return s.photo_year.toString();
+    if (s.exif_date) return new Date(s.exif_date).getFullYear().toString();
+    return "Undated";
+}
+
+function getYearNum(s: Submission): number {
+    if (s.photo_year) return s.photo_year;
+    if (s.exif_date) return new Date(s.exif_date).getFullYear();
+    return 9999;
+}
+
 export default function MemoryWall() {
-    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [groupedSubmissions, setGroupedSubmissions] = useState<[string, Submission[]][]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Lightbox State
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
 
     useEffect(() => {
@@ -23,17 +33,29 @@ export default function MemoryWall() {
                 console.error("Error fetching submissions:", error);
                 setError("Failed to load memories. Please try again later.");
             } else if (data) {
-                setSubmissions(data);
+                // Sort by year descending (newest first), then by created_at within each year
+                const sorted = [...data].sort((a, b) => {
+                    const yearDiff = getYearNum(b) - getYearNum(a);
+                    if (yearDiff !== 0) return yearDiff;
+                    return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+                });
+
+                // Group by year
+                const groups = new Map<string, Submission[]>();
+                for (const s of sorted) {
+                    const yr = getYear(s);
+                    if (!groups.has(yr)) groups.set(yr, []);
+                    groups.get(yr)!.push(s);
+                }
+
+                setGroupedSubmissions(Array.from(groups));
             }
             setIsLoading(false);
         }
 
         loadSubmissions();
 
-        // Setup Real-time subscription for new inserts
         const unsubscribe = subscribeToSubmissions(() => {
-            // When a new submission happens, we just refetch everything to ensure correct order
-            // This is safe assuming modest scale (~50-200 photos)
             loadSubmissions();
         });
 
@@ -43,7 +65,7 @@ export default function MemoryWall() {
     }, []);
 
     const breakpointColumnsObj = {
-        default: 4,
+        default: 3,
         1280: 3,
         1024: 2,
         640: 1
@@ -66,7 +88,7 @@ export default function MemoryWall() {
         );
     }
 
-    if (submissions.length === 0) {
+    if (groupedSubmissions.length === 0) {
         return (
             <div className="w-full flex-col p-12 bg-white/5 border border-white/10 rounded-3xl text-center backdrop-blur-md flex items-center justify-center">
                 <span className="material-symbols-outlined text-[var(--color-golden-hour)] text-5xl mb-4 opacity-50">photo_library</span>
@@ -78,19 +100,34 @@ export default function MemoryWall() {
 
     return (
         <>
-            <Masonry
-                breakpointCols={breakpointColumnsObj}
-                className="flex w-auto -ml-4 sm:-ml-6"
-                columnClassName="pl-4 sm:pl-6 bg-clip-padding"
-            >
-                {submissions.map((submission) => (
-                    <div key={submission.id} className="mb-4 sm:mb-6 cursor-pointer" onClick={() => setSelectedSubmission(submission)}>
-                        <MemoryCard submission={submission} />
+            {groupedSubmissions.map(([year, items]) => (
+                <div key={year} className="mb-16 last:mb-0">
+                    {/* Year divider */}
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--color-golden-hour)]/30" />
+                        <div className="bg-black/30 backdrop-blur-md border border-[var(--color-golden-hour)]/40 px-5 py-1.5 rounded-full shadow-[0_0_15px_rgba(255,202,40,0.15)]">
+                            <span className="text-[var(--color-golden-hour)] font-bold text-lg tracking-wide">
+                                {year === "Undated" ? "Timeless" : year}
+                            </span>
+                        </div>
+                        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--color-golden-hour)]/30" />
                     </div>
-                ))}
-            </Masonry>
 
-            {/* Fullscreen Lightbox */}
+                    {/* Masonry grid for this year */}
+                    <Masonry
+                        breakpointCols={breakpointColumnsObj}
+                        className="flex w-auto -ml-4 sm:-ml-6"
+                        columnClassName="pl-4 sm:pl-6 bg-clip-padding"
+                    >
+                        {items.map((submission) => (
+                            <div key={submission.id} className="mb-4 sm:mb-6 cursor-pointer" onClick={() => setSelectedSubmission(submission)}>
+                                <MemoryCard submission={submission} />
+                            </div>
+                        ))}
+                    </Masonry>
+                </div>
+            ))}
+
             {selectedSubmission && (
                 <Lightbox
                     submission={selectedSubmission}
