@@ -1,25 +1,26 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const TRACK_ID = '3sK8wGT43QFpWrvNQsrQya';
-// autoplay=1 activates playback once the browser allows it (after user gesture)
 const EMBED_SRC = `https://open.spotify.com/embed/track/${TRACK_ID}?utm_source=generator&autoplay=1&theme=0`;
 
 export default function BackgroundMusic() {
     const [dismissed, setDismissed] = useState(false);
     const [activated, setActivated] = useState(false);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // Browsers block autoplay until the first user gesture.
-    // Listen for any click/keydown and mark as activated.
+    // Defer iframe render until the first user gesture.
+    // Mounting the iframe *inside* the gesture event means the browser
+    // treats autoplay as gesture-initiated and allows audio playback.
     useEffect(() => {
         const activate = () => setActivated(true);
         window.addEventListener('click', activate, { once: true });
         window.addEventListener('keydown', activate, { once: true });
+        window.addEventListener('touchstart', activate, { once: true });
         return () => {
             window.removeEventListener('click', activate);
             window.removeEventListener('keydown', activate);
+            window.removeEventListener('touchstart', activate);
         };
     }, []);
 
@@ -27,25 +28,25 @@ export default function BackgroundMusic() {
 
     return (
         <>
-            {/* ── Hidden Spotify iframe ─────────────────────────────────── */}
-            {/* Must be rendered (not display:none) for autoplay to function */}
-            <iframe
-                ref={iframeRef}
-                src={EMBED_SRC}
-                width="1"
-                height="1"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                title="Background Music Player"
-                style={{
-                    position: 'fixed',
-                    bottom: '-2px',
-                    left: '-2px',
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    zIndex: -1,
-                }}
-            />
+            {/* Only mount Spotify iframe AFTER first gesture so autoplay is allowed */}
+            {activated && (
+                <iframe
+                    src={EMBED_SRC}
+                    width="1"
+                    height="1"
+                    frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    title="Background Music Player"
+                    style={{
+                        position: 'fixed',
+                        bottom: '-2px',
+                        left: '-2px',
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        zIndex: -1,
+                    }}
+                />
+            )}
 
             {/* ── Floating now-playing pill ─────────────────────────────── */}
             <div

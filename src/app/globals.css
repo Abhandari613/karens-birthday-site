@@ -204,22 +204,24 @@ body {
   animation: petal-float linear infinite;
 }
 
-/* Background Slideshow Animation for 6 images (48s total loop) */
+/* Background Slideshow Animation for 6 images (48s total loop, ~8s per image)
+   Image 1 starts immediately visible; each subsequent image fades in at its delay. */
 @keyframes bgFade {
-
-  0%,
-  10% {
-    opacity: 0;
+  0% {
+    opacity: 1;
     transform: scale(1);
   }
 
-  15%,
-  25% {
-    opacity: 0.6;
+  12.5% {
+    opacity: 1;
     transform: scale(1.02);
   }
 
-  30%,
+  16.67% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+
   100% {
     opacity: 0;
     transform: scale(1.05);
