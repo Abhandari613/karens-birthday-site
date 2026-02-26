@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 const TRACK_URI = 'spotify:track:3sK8wGT43QFpWrvNQsrQya';
 
-// Extend window for Spotify IFrame API callback
 declare global {
     interface Window {
         onSpotifyIframeApiReady?: (IFrameAPI: SpotifyIFrameAPI) => void;
@@ -22,7 +21,6 @@ interface SpotifyIFrameAPI {
 interface SpotifyEmbedController {
     play: () => void;
     togglePlay: () => void;
-    destroy: () => void;
 }
 
 export default function BackgroundMusic() {
@@ -30,11 +28,9 @@ export default function BackgroundMusic() {
     const [activated, setActivated] = useState(false);
     const controllerRef = useRef<SpotifyEmbedController | null>(null);
     const embedRef = useRef<HTMLDivElement>(null);
-    const readyRef = useRef(false);
 
     // Load Spotify IFrame API and create embed controller on mount
     useEffect(() => {
-        // Called once the API script has loaded
         window.onSpotifyIframeApiReady = (IFrameAPI) => {
             if (!embedRef.current) return;
             IFrameAPI.createController(
@@ -42,37 +38,37 @@ export default function BackgroundMusic() {
                 { uri: TRACK_URI, width: 1, height: 1 },
                 (controller) => {
                     controllerRef.current = controller;
-                    readyRef.current = true;
                 }
             );
         };
 
-        // Inject the API script
         const script = document.createElement('script');
         script.src = 'https://open.spotify.com/embed/iframe-api/v1';
         script.async = true;
         document.body.appendChild(script);
 
         return () => {
-            controllerRef.current?.destroy();
             script.remove();
             delete window.onSpotifyIframeApiReady;
         };
     }, []);
 
-    // On first user gesture, call play() directly — this stays within
-    // the browser's "user activation" window so audio is allowed.
+    // On first user gesture, call play() directly
     const handlePlay = useCallback(() => {
         if (activated) return;
         setActivated(true);
 
+        const tryPlay = () => {
+            try { controllerRef.current?.play(); } catch { /* ignore */ }
+        };
+
         if (controllerRef.current) {
-            controllerRef.current.play();
+            tryPlay();
         } else {
-            // API not ready yet — poll briefly until controller exists
+            // API not ready yet — poll until controller exists
             const id = setInterval(() => {
                 if (controllerRef.current) {
-                    controllerRef.current.play();
+                    tryPlay();
                     clearInterval(id);
                 }
             }, 200);
@@ -91,6 +87,17 @@ export default function BackgroundMusic() {
             window.removeEventListener('touchstart', handler);
         };
     }, [handlePlay]);
+
+    // Dismiss: hide pill, stop audio by removing the iframe from DOM
+    const handleDismiss = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Remove the Spotify iframe by clearing the container
+        if (embedRef.current) {
+            embedRef.current.innerHTML = '';
+        }
+        controllerRef.current = null;
+        setDismissed(true);
+    }, []);
 
     if (dismissed) return null;
 
@@ -150,7 +157,7 @@ export default function BackgroundMusic() {
 
                     {/* Dismiss button */}
                     <button
-                        onClick={(e) => { e.stopPropagation(); setDismissed(true); controllerRef.current?.destroy(); }}
+                        onClick={handleDismiss}
                         className="ml-1 text-white/30 hover:text-white/70 transition-colors z-10 text-[10px] leading-none"
                         aria-label="Dismiss music player"
                     >
