@@ -1,52 +1,115 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-const TRACK_ID = '3sK8wGT43QFpWrvNQsrQya';
-const EMBED_SRC = `https://open.spotify.com/embed/track/${TRACK_ID}?utm_source=generator&autoplay=1&theme=0`;
+const TRACK_URI = 'spotify:track:3sK8wGT43QFpWrvNQsrQya';
+
+// Extend window for Spotify IFrame API callback
+declare global {
+    interface Window {
+        onSpotifyIframeApiReady?: (IFrameAPI: SpotifyIFrameAPI) => void;
+    }
+}
+
+interface SpotifyIFrameAPI {
+    createController(
+        el: HTMLElement,
+        options: { uri: string; width: number; height: number },
+        callback: (controller: SpotifyEmbedController) => void
+    ): void;
+}
+
+interface SpotifyEmbedController {
+    play: () => void;
+    togglePlay: () => void;
+    destroy: () => void;
+}
 
 export default function BackgroundMusic() {
     const [dismissed, setDismissed] = useState(false);
     const [activated, setActivated] = useState(false);
+    const controllerRef = useRef<SpotifyEmbedController | null>(null);
+    const embedRef = useRef<HTMLDivElement>(null);
+    const readyRef = useRef(false);
 
-    // Defer iframe render until the first user gesture.
-    // Mounting the iframe *inside* the gesture event means the browser
-    // treats autoplay as gesture-initiated and allows audio playback.
+    // Load Spotify IFrame API and create embed controller on mount
     useEffect(() => {
-        const activate = () => setActivated(true);
-        window.addEventListener('click', activate, { once: true });
-        window.addEventListener('keydown', activate, { once: true });
-        window.addEventListener('touchstart', activate, { once: true });
+        // Called once the API script has loaded
+        window.onSpotifyIframeApiReady = (IFrameAPI) => {
+            if (!embedRef.current) return;
+            IFrameAPI.createController(
+                embedRef.current,
+                { uri: TRACK_URI, width: 1, height: 1 },
+                (controller) => {
+                    controllerRef.current = controller;
+                    readyRef.current = true;
+                }
+            );
+        };
+
+        // Inject the API script
+        const script = document.createElement('script');
+        script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+        script.async = true;
+        document.body.appendChild(script);
+
         return () => {
-            window.removeEventListener('click', activate);
-            window.removeEventListener('keydown', activate);
-            window.removeEventListener('touchstart', activate);
+            controllerRef.current?.destroy();
+            script.remove();
+            delete window.onSpotifyIframeApiReady;
         };
     }, []);
+
+    // On first user gesture, call play() directly — this stays within
+    // the browser's "user activation" window so audio is allowed.
+    const handlePlay = useCallback(() => {
+        if (activated) return;
+        setActivated(true);
+
+        if (controllerRef.current) {
+            controllerRef.current.play();
+        } else {
+            // API not ready yet — poll briefly until controller exists
+            const id = setInterval(() => {
+                if (controllerRef.current) {
+                    controllerRef.current.play();
+                    clearInterval(id);
+                }
+            }, 200);
+            setTimeout(() => clearInterval(id), 10000);
+        }
+    }, [activated]);
+
+    useEffect(() => {
+        const handler = () => handlePlay();
+        window.addEventListener('click', handler, { once: true });
+        window.addEventListener('keydown', handler, { once: true });
+        window.addEventListener('touchstart', handler, { once: true });
+        return () => {
+            window.removeEventListener('click', handler);
+            window.removeEventListener('keydown', handler);
+            window.removeEventListener('touchstart', handler);
+        };
+    }, [handlePlay]);
 
     if (dismissed) return null;
 
     return (
         <>
-            {/* Only mount Spotify iframe AFTER first gesture so autoplay is allowed */}
-            {activated && (
-                <iframe
-                    src={EMBED_SRC}
-                    width="1"
-                    height="1"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    title="Background Music Player"
-                    style={{
-                        position: 'fixed',
-                        bottom: '-2px',
-                        left: '-2px',
-                        opacity: 0,
-                        pointerEvents: 'none',
-                        zIndex: -1,
-                    }}
-                />
-            )}
+            {/* Hidden container for Spotify IFrame API embed */}
+            <div
+                ref={embedRef}
+                style={{
+                    position: 'fixed',
+                    bottom: '-10px',
+                    left: '-10px',
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    zIndex: -1,
+                }}
+            />
 
             {/* ── Floating now-playing pill ─────────────────────────────── */}
             <div
@@ -87,7 +150,7 @@ export default function BackgroundMusic() {
 
                     {/* Dismiss button */}
                     <button
-                        onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
+                        onClick={(e) => { e.stopPropagation(); setDismissed(true); controllerRef.current?.destroy(); }}
                         className="ml-1 text-white/30 hover:text-white/70 transition-colors z-10 text-[10px] leading-none"
                         aria-label="Dismiss music player"
                     >
