@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+certificates
+
+# debug/temp output
+eslint.json
+eslint.txt
+eslint_output.txt
+lint.log
+hero.html
+
+# source photos
+Karen photos/
+
+# claude/gemini config
+.claude/
+.gemini/
