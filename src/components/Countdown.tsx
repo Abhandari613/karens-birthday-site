@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-const PARTY_DATE = new Date("2025-03-07T19:00:00");
+const PARTY_DATE = new Date("2026-03-07T16:00:00");
 
 interface TimeLeft {
   days: number;
