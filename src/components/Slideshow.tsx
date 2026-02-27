@@ -70,10 +70,7 @@ export default function Slideshow() {
 
     const currentSlide = slides[currentIndex];
 
-    // Build the public URL for the media
-    const mediaUrl = currentSlide.media_url
-        ? supabase.storage.from('media').getPublicUrl(currentSlide.media_url).data.publicUrl
-        : null;
+    const mediaUrl = currentSlide.media_url;
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-black flex items-center justify-center cursor-none">
